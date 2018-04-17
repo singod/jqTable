@@ -30,6 +30,7 @@
 |tr.g-toggleTable--title>th i.g-toggleTable--button|操作头-单个切换部分|
 |col data-total="true"|计算总数|
 |col data-sort="true"|添加排序|
+|col data-sortconfig="string/function"|添加参数，可为字符串或函数|
 
 
 #### 参数介绍
@@ -39,15 +40,19 @@
 |fixedLeft| false| 左边固定|boolean|
 |fixedRight| false| 右边固定|boolean|
 |fixedMinWidth| 100| 最小宽度|number|
+| fixedMaxWidth |500| 最大宽度|number|
 |totalString| '--'| 计算列总数|string|
 |totalTitle|'总计'| 总数的标题| string |
+| handleSortData |{}| 可对相应列执行自定义处理函数，在排序前| json |
+| noWidthColAdaptClient |false|设置自适应宽度列是否根据窗口变小改变而减小（建议设为false）| json |
 
 #### 隐藏参数介绍
 
-|参数名|作用|类型|
-|----|-----|-----|
-|data-total="true"| 开启这一列计算总数功能|boolean|
-|data-sort="true"|开启这一列的排序功能|boolean|
+|参数名|作用|类型|可选参数|
+|----|-----|-----|-----|
+|data-total="true"| 开启这一列计算总数功能|boolean||
+|data-sort="true"|开启这一列的排序功能|boolean|up（开启且默认为up排序）,down|
+|data-sortconfig="string或function"|添加参数|string或function||
 
 #### 方法
 
@@ -132,6 +137,66 @@ $('[role="c-table"]').jqTable();
 
 ```
 
+新增handleSortData使用举例
+
+```
+data-sortconfig="¥":参数handleSortData没定义，则替换字符¥为'',
+data-sortconfig="sortSize":排序前执行handleSortData.sortSize 处理数据，具体数据格式可输出sortSize函数的data查看
+
+HTML:
+<table cellspacing="0" cellpadding="0" border="0" role="c-table-sort">
+  <colgroup>
+    <col name="" width="130" data-sort="up" data-sortconfig="sortSize">
+    <col name="" width="130" data-sort="true" data-sortconfig="¥">
+  </colgroup>
+  <thead>
+    <tr>
+      <th class="">
+        <div class="cell">
+          流量大小
+        </div>
+      </th>
+      <th class="">
+        <div class="cell">金额</div>
+      </th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="">
+        <div class="cell">500M</div>
+      </td>
+      <td class="">
+        <div class="cell">¥3.000</div>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+JS:
+// 排序表格
+$('[role="c-table-sort"]').jqTable({
+	handleSortData:{
+	  sortSize: sortSize
+	}
+});
+// 排序前对数据进行处理，此处场景是判断流量大小的单位M/G做相应转换
+function sortSize(data){
+    var result = [];
+    var _data, _value;
+    for (var i = 0; i < data.length; i++) {
+      _data = data[i];
+      _value = _data.value;
+      _data.value = _value.indexOf('M') !== -1 ? removeUtil(_value, 'M') : _value.indexOf('G') !== -1 ? removeUtil(_value, 'G') * 1024 : _value;
+      result.push(_data);
+    }
+    return result;
+  }
+  function removeUtil(data,str){
+    return data.replace(new RegExp(str,'gi'), '');
+  }
+```
+
 #### 例子中用到的JS说明
 
 ##### jqTable js
@@ -155,3 +220,12 @@ js/plugins ： 例子中用到的外来插件
 js/json.js ： 例子中用到的json
 
 ```
+
+##### 更新日志
+
+2018-04-16 优化自适应列的宽度计算方式，默认窗口宽度不够时，列最大宽度为500，窗口缩小，列的最小宽度大于最小宽度，小于最大宽度，正常情况下为原始宽度
+
+2018-04-12 添加排序前对数据的处理（用户可使用自定义函数处理，不影响源数据展示，仅对排序有影响）
+
+2018-01-18 添加多列功能
+
